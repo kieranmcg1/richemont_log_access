@@ -1,0 +1,1382 @@
+{
+	"info": {
+		"_postman_id": "fc4c0fa1-c069-48bf-a8d8-28e851eae670",
+		"name": "Richemont API Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14104067"
+	},
+	"item": [
+		{
+			"name": "Positive tests",
+			"item": [
+				{
+					"name": "Login Auth",
+					"item": [
+						{
+							"name": "Successful Login request",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Parse the response body as JSON\r",
+											"let jsonData = pm.response.json();\r",
+											"\r",
+											"// Get token from body\r",
+											"let token = jsonData.token;\r",
+											"token = token.replace(/\"/g, '');\r",
+											"\r",
+											"// Set token as a collection variable\r",
+											"pm.collectionVariables.set(\"authToken\", token);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"tracey.ramos@reqres.in\",\r\n    \"password\": \"cityslicka\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/login",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"login"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get Calls",
+					"item": [
+						{
+							"name": "Return Users",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify the correct status code is returned\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Parse the returned body as JSON\r",
+											"var responseBody = pm.response.json();\r",
+											"\r",
+											"// Access the value of the \"page\" attribute and assign it to a variable\r",
+											"var totalNumber = responseBody.total;\r",
+											"\r",
+											"//Set the collection variable\r",
+											"pm.collectionVariables.set(\"totalUsers\", totalNumber);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "{{authToken}}",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "authToken",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{baseURL}}/users",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Return All Users on 1 Page Delay",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify the correct status code is returned\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Verify body returns the correct page number string\r",
+											"pm.test(\"Body returns correct page number\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"page\":1');\r",
+											"});\r",
+											"\r",
+											"// Verify body returns the correct number of users per page\r",
+											"totalUsers = pm.collectionVariables.get(\"totalUsers\")\r",
+											"pm.test(\"Body returns correct number of users\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"per_page\":' + totalUsers);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{baseURL}}/users?page=1&per_page={{totalUsers}}&delay=4",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "per_page",
+											"value": "{{totalUsers}}"
+										},
+										{
+											"key": "delay",
+											"value": "4"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Return Valid Specific User",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Get the number of total users from the collection variable \r",
+											"totalUsers = pm.collectionVariables.get(\"totalUsers\")\r",
+											"\r",
+											"// Generate a random user id/number to be passed into the api request\r",
+											"randomInt = Math.floor((Math.random() * totalUsers) + 1)\r",
+											"\r",
+											"// Pass in the user ID\r",
+											"pm.collectionVariables.set(\"randomUserId\", randomInt);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify the correct status code is returned\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Verify body returns the correct id number\r",
+											"pm.test(\"Body returns correct id\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"id\":' + randomInt);\r",
+											"});\r",
+											"\r",
+											"// Verify content type header is present\r",
+											"pm.test(\"Content-Type is present\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/users/{{randomUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{randomUserId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Post Calls",
+					"item": [
+						{
+							"name": "Register New User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify correct status code name and number\r",
+											"pm.test(\"Status code name has string\", () => {\r",
+											"  pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Verify ID and Token are returned\r",
+											"pm.test(\"Body returns correct information\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"id\":' + '4');\r",
+											"    pm.expect(pm.response.text()).to.include('\"token\":' + '\"QpwL5tke4Pnpja7X4\"');\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"eve.holt@reqres.in\",\r\n    \"password\": \"pistol\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/register",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create New User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify status code number and name\r",
+											"pm.test(\"Successful POST request\", () => {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([201, 202]);\r",
+											"});\r",
+											"pm.test(\"Status code name has string\", () => {\r",
+											"  pm.response.to.have.status(\"Created\" || \"Accepted\");\r",
+											"});\r",
+											" \r",
+											"// Verify body returns the correct information\r",
+											"pm.test(\"Body returns correct information\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"username\":' + '\"jamesBond\"');\r",
+											"    pm.expect(pm.response.text()).to.include('\"email\":' + '\"007bond@mailinator.com\"');\r",
+											"    pm.expect(pm.response.text()).to.include('\"password\":' + '\"sirRoger\"');\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"username\": \"jamesBond\",\r\n  \"email\": \"007bond@mailinator.com\",\r\n  \"password\": \"sirRoger\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Put Calls",
+					"item": [
+						{
+							"name": "Update User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify status code is 200\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Verify body content returned\r",
+											"pm.test(\"Body returns correct information\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"id\":' + '4');\r",
+											"    pm.expect(pm.response.text()).to.include('\"email\":' + '\"eve.holt@reqres.in\"');\r",
+											"    pm.expect(pm.response.text()).to.include('\"first_name\":' + '\"David\"');\r",
+											"    pm.expect(pm.response.text()).to.include('\"last_name\":' + '\"Holt\"');\r",
+											"    pm.expect(pm.response.text()).to.include('\"avatar\":' + '\"https://en.wikipedia.org/wiki/Avatar_(2009_film)#/media/File:Avatar_(2009_film)_poster.jpg\"');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"id\": 4,\r\n    \"email\": \"eve.holt@reqres.in\",\r\n    \"first_name\": \"David\",\r\n    \"last_name\": \"Holt\",\r\n    \"avatar\": \"https://en.wikipedia.org/wiki/Avatar_(2009_film)#/media/File:Avatar_(2009_film)_poster.jpg\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/4",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update item 2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify status code is 200\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Verify body content returned\r",
+											"pm.test(\"Body returns correct information\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include('\"id\":' + '1');\r",
+											"    pm.expect(pm.response.text()).to.include('\"name\":' + '\"pink\"');\r",
+											"    pm.expect(pm.response.text()).to.include('\"year\":' + '1999');\r",
+											"});\r",
+											"\r",
+											"// Verify current date is also included in the response body\r",
+											"let currentDate = new Date().toISOString().split('T')[0];\r",
+											"pm.test(\"Body returns correct information\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include(currentDate);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"id\": 1,\r\n    \"name\": \"pink\",\r\n    \"year\": 1999,\r\n    \"color\": \"#C74375\",\r\n    \"pantone_value\": \"17-2031\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/products/2",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"products",
+										"2"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Delete Calls",
+					"item": [
+						{
+							"name": "Delete random User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Verify Status code is 204\", function () {\r",
+											"    pm.response.to.have.status(204);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{randomUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{randomUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Specific product",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Verify Status code is 204\", function () {\r",
+											"    pm.response.to.have.status(204);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/product/8",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"product",
+										"8"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Patch Calls",
+					"item": [
+						{
+							"name": "Modify users email",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Body matches string\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include(\"new.email.address@reqres.in\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"new.email.address@reqres.in\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/3",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "New Request",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Body matches string\", function () {\r",
+											"    pm.expect(pm.response.text()).to.include(\"pink\");\r",
+											"    pm.expect(pm.response.text()).to.include(1999);\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"pink\",\r\n    \"year\": 1999\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/product/3",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"product",
+										"3"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Negative Tests",
+			"item": [
+				{
+					"name": "Create New User Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify status code number and name\r",
+									"pm.test(\"Successful POST request\", () => {\r",
+									"    pm.expect(pm.response.code).to.be.oneOf([201, 202]);\r",
+									"});\r",
+									"pm.test(\"Status code name has string\", () => {\r",
+									"  pm.response.to.have.status(\"Created\" || \"Accepted\");\r",
+									"});\r",
+									" \r",
+									"// Verify body returns the correct information\r",
+									"pm.test(\"Body returns correct information\", function () {\r",
+									"    pm.expect(pm.response.text()).to.include('\"username\":' + '\"\"');\r",
+									"    pm.expect(pm.response.text()).to.include('\"email\":' + '\"007bond@mailinator.com\"');\r",
+									"    pm.expect(pm.response.text()).to.include('\"password\":' + '\"sirRoger\"');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"\",\r\n  \"email\": \"007bond@mailinator.com\",\r\n  \"password\": \"sirRoger\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/users",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Negative Create New User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify the correct status code is returned\r",
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
+									"});\r",
+									"\r",
+									"// Verify body returns the correct string\r",
+									"pm.test(\"Body returns correct string\", function () {\r",
+									"    pm.expect(pm.response.text()).to.not.include('\"username\":');\r",
+									"    pm.expect(pm.response.text()).to.not.include('\"email\":');\r",
+									"    pm.expect(pm.response.text()).to.not.include('\"password\":');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "username",
+									"value": "djUnknown",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "David",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "Jones",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseURL}}/users",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Negative Create New User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify the correct status code is returned\r",
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"\r",
+									"// Verify body returns the correct string\r",
+									"pm.test(\"Body returns correct error\", function () {\r",
+									"    pm.expect(pm.response.text()).to.include('\"error\":' + '\"Missing email or username\"');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "username",
+									"value": "thenameisbond",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "jamesbond@mailinator.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "password123",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseURL}}/register",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Body with None defined User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Check that correct error message is displayed\", function(){\r",
+									"    pm.expect(pm.response.text()).to.include('\"error\":' + '\"Note: Only defined users succeed registration\"');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"eve.ht@reqres.in\",\r\n    \"password\": \"pistol\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/register",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "!! 30 Second Delay !!",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify the correct status code is returned\r",
+									"pm.test(\"Status code is 503\", function () {\r",
+									"    pm.response.to.have.status(503);\r",
+									"});\r",
+									"\r",
+									"// Verify the body returns application error\r",
+									"pm.test(\"Body contains string for error\", function () {\r",
+									"    pm.expect(pm.response.text()).to.include(\"Application Error\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{baseURL}}/users?delay=30",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users"
+							],
+							"query": [
+								{
+									"key": "delay",
+									"value": "30"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid user ID",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Get total Users number \r",
+									"randomUser = pm.collectionVariables.get(\"randomUserId\")\r",
+									"\r",
+									"// Create new variable which will be an invalid user ID\r",
+									"invalidUser = parseInt(randomUser + 20)\r",
+									"\r",
+									"// Set the variable\r",
+									"pm.collectionVariables.set(\"invalidUserId\", invalidUser);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify status code 404 is returned\r",
+									"pm.test(\"Status code is 404\", () => {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{baseURL}}/users/{{invalidUserId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users",
+								"{{invalidUserId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "No Host sent in header",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify status code\r",
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true,
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/unknown/3",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"unknown",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid body",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify 400 status code is returned\r",
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"\r",
+									"// Verify content type in header\r",
+									"pm.test(\"Content-Type is present\", function () {\r",
+									"    pm.response.to.have.header(\"Content-Type\");\r",
+									"});\r",
+									"\r",
+									"// Test to verify correct content for type header\r",
+									"pm.test(\"Response header contains 'charset=utf-8'\", function () {\r",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html; charset=utf-8');\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Verify the content type in the header of the request\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "\"id\": 1,\r\n\"name\": \"blue\",\r\n\"year\": 1999,\r\n\"color\": \"#98B2D1\",\r\n\"pantone_value\": \"15-4020\"\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/unknown/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"unknown",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Incomplete body",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify 400 status code\r",
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"\r",
+									"// Verify status string\r",
+									"pm.test(\"Status code name has string\", () => {\r",
+									"  pm.response.to.have.status(\"Bad Request\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\"myId\": 3,\r\n\"names\": \"true red\",\r\n\"yearOfBirth\": 2002,\r\n\"colorCode\": \"345\",\r\n\"pantone_value\": 19-16\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/unknown/3",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"unknown",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login fail wrong method",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify 404 status code\r",
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"tracey.ramos@reqres.in\",\r\n    \"password\": \"cityslicka\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Requst no headers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Verify Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true,
+							"user-agent": true,
+							"accept": true,
+							"accept-encoding": true,
+							"connection": true
+						}
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/unknown/3",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"unknown",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Incorrect URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verify response code 204\r",
+									"pm.test(\"Status code is 204\", function () {\r",
+									"    pm.response.to.have.status(204);\r",
+									"});\r",
+									"\r",
+									"// Verify response code name\r",
+									"pm.test(\"Status code name has string\", function () {\r",
+									"    pm.response.to.have.status(\"No Content\");\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/user/3",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"user",
+								"3"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "https://reqres.in/api",
+			"type": "string"
+		},
+		{
+			"key": "totalUsers",
+			"value": ""
+		},
+		{
+			"key": "randomUserId",
+			"value": ""
+		},
+		{
+			"key": "invalidUserId",
+			"value": ""
+		},
+		{
+			"key": "authToken",
+			"value": ""
+		}
+	]
+}
